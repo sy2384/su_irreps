@@ -24,6 +24,7 @@ class Tableau(): # Young tableau for SU(3) irrep
             init_matrix.append([2] * self.idx2)
         return init_matrix
 
+
 # Add a box to tableau -- could be 'a' or 'b'
 def add_a_box_to_tableau(tableau, c='a'):
     result1 = tableau.matrix()
@@ -50,6 +51,34 @@ def add_a_box_to_tableau(tableau, c='a'):
         result.append(result3)
     return result
 
+
+# Add a box to matrix -- could be 'a' or 'b'
+def add_box_to_matrix(input_matrix, c='a'):
+    result1 = input_matrix
+    number_of_rows = len(input_matrix)
+    # result1: add c to the right of 1st row
+    if number_of_rows == 0:
+        result1.append([c])
+    else:
+        result1[0].append(c)
+    result = [result1]
+    # result2: add c to the right of 2nd row
+    if number_of_rows >= 1:
+        result2 = input_matrix
+        if number_of_rows == 1:
+            result2.append([c])
+            result.append(result2)
+        elif len(result2[0]) > len(result2[1]):
+            result2[1].append(c)
+            result.append(result2)
+    # result3: add c to 3rd row
+    if number_of_rows >= 2:
+        result3 = input_matrix
+        result3.append([c])
+        result.append(result3)
+    return result
+
+
 # Convert matrix back to Tableau
 def to_tableau(matrix):
     number_of_rows = len(matrix)
@@ -65,10 +94,12 @@ def to_tableau(matrix):
         idx1 = len(matrix[0]) - len(matrix[1])
     return Tableau(idx1, idx2)
 
+
 # Add a box to tableau and convert back
 def tab_add_c_then_to_tab(tableau, c='a'):
     lst =  add_a_box_to_tableau(tableau, c)
     return [to_tableau(item) for item in lst]
+
 
 # row length check
 def row_length_check(matrix):
@@ -78,6 +109,7 @@ def row_length_check(matrix):
         if row_lengths[i] < row_lengths[i + 1]:
             return False
     return True
+
 
 # 'b_count <= a_count' check
 def b_a_check(matrix):
@@ -97,6 +129,7 @@ def b_a_check(matrix):
         k += 1
     return flag
 
+
 # no double 'a' or 'b' check
 def no_double_check(matrix):
     copy = matrix
@@ -104,12 +137,13 @@ def no_double_check(matrix):
         return True
     col_num = len(copy[0])
     row_num = len(copy)
+    row_lengths = [len(copy[i]) for i in range(row_num)]
     # fill in 0's to form a full rectangle
     for i in range(1, row_num):
-        copy[i] += ( [0] * (col_num - len(matrix[i])) )
-    a_count = 0
-    b_count = 0
+        copy[i] += ([0] * (col_num - row_lengths[i]))
     for j in range(col_num):
+        a_count = 0
+        b_count = 0
         k = 0
         while (k < row_num) and (copy[k][j] != 0):
             if copy[k][j] == 'a':
@@ -121,9 +155,11 @@ def no_double_check(matrix):
             k += 1
     return True
 
+
 # big_check
 def big_check(matrix):
     return (row_length_check(matrix) and b_a_check(matrix)) and no_double_check(matrix)
+
 
 # One iteration for a given list of tableaux (unfinished, no check)
 def add_a_box_list(input_lst, c='a'):
@@ -132,6 +168,7 @@ def add_a_box_list(input_lst, c='a'):
         temp = tab_add_c_then_to_tab(tab, c)
         lst1 += temp
     return lst1
+
 
 # Finally, tensor "multiply" 2 tableaux!
 def multiply_tableaux(tab1, tab2):
@@ -146,10 +183,23 @@ def multiply_tableaux(tab1, tab2):
         CG_decomp = add_a_box_list(CG_decomp, 'b')
     return [thing for thing in CG_decomp]
 
+
 # some tests
 irreps = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2), Tableau(1, 1), Tableau(2, 1), Tableau(1, 2), Tableau(0, 3), Tableau(2, 2)]
-"""
+
 for irrep in irreps:
-    print([tab_add_c_then_to_tab(irrep, 'a')])
-"""
-print(multiply_tableaux(irreps[1], irreps[2]))
+    print([item for item in add_box_to_matrix(irrep.matrix(), 'a')])
+# for irrep in irreps:
+#     print([item for item in add_a_box_to_tableau(irrep, 'a')])
+
+trial1 = [[1, 'a'], ['a']]
+trial2 = [[1, 'a'], [2, 'a']]
+trial3 = [[1, 1, 'a'], [2, 'a', 'a']]
+trial4 = [[1, 1, 'a'], [2, 'a', 'b']]
+trial5 = []
+trials = [trial1, trial2, trial3, trial4, trial5]
+
+for trial in trials:
+    print(no_double_check(trial))
+
+# print(multiply_tableaux(irreps[1], irreps[2]))
