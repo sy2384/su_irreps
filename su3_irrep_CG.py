@@ -30,34 +30,7 @@ class Tableau(): # Young tableau for SU(3) irrep
         return init_matrix
 
 
-# Add a box to tableau -- could be 'a' or 'b' (NOT USED)
-def add_box_to_tableau(tableau, c='a'):
-    result1 = tableau.matrix()
-    number_of_rows = len(tableau.matrix())
-    # result1: add c to the right of 1st row
-    if number_of_rows == 0:
-        result1.append([c])
-    else:
-        result1[0].append(c)
-    result = [result1]
-    # result2: add c to the right of 2nd row
-    if number_of_rows >= 1:
-        result2 = tableau.matrix()
-        if number_of_rows == 1:
-            result2.append([c])
-            result.append(result2)
-        elif len(result2[0]) > len(result2[1]):
-            result2[1].append(c)
-            result.append(result2)
-    # result3: add c to 3rd row
-    if number_of_rows >= 2:
-        result3 = tableau.matrix()
-        result3.append([c])
-        result.append(result3)
-    return result
-
-
-# Add a box to the right of a specific row_index (NOTE: have to defind a deep copy first!)
+# Add a box to the right of a specific row_index (NOTE: have to define a deep copy first!)
 def add_box_to_row(input_matrix, c, row_index):
     n_rows = len(input_matrix)
     result = copy.deepcopy(input_matrix)
@@ -66,6 +39,7 @@ def add_box_to_row(input_matrix, c, row_index):
     elif row_index == n_rows:
         result.append([c])
     return result
+
 
 # Convert matrix back to Tableau
 def to_tableau(matrix):
@@ -83,17 +57,12 @@ def to_tableau(matrix):
     return Tableau(idx1, idx2)
 
 
-# Add a box to tableau and convert back (NOT USED)
-def tab_add_c_then_to_tab(tableau, c='a'):
-    lst =  add_a_box_to_tableau(tableau, c)
-    return [to_tableau(item) for item in lst]
-
-
 # number of rows check
 def n_rows_check(matrix):
     if len(matrix) > 3:
         return False
     return True
+
 
 # row length check
 def row_length_check(matrix):
@@ -106,6 +75,7 @@ def row_length_check(matrix):
             if row_lengths[i] < row_lengths[i + 1]:
                 return False
     return True
+
 
 # 'b_count <= a_count' check
 def b_a_check(matrix):
@@ -125,7 +95,8 @@ def b_a_check(matrix):
         k += 1
     return flag
 
-# no double 'a' or 'b' check (NOTE: need a deepcopy too, in order not to affect input matrix)
+
+# no double 'a' or 'b' check (NOTE: need a deep copy too, in order not to affect input matrix)
 def no_double_check(matrix):
     cpy = copy.deepcopy(matrix)
     if len(cpy) == 0:
@@ -150,11 +121,13 @@ def no_double_check(matrix):
             k += 1
     return True
 
+
 # overall check
 def big_check(matrix):
     return (row_length_check(matrix) and b_a_check(matrix)) and (no_double_check(matrix) and n_rows_check(matrix))
 
-# checked add_box_to_matrix_checked
+
+# big checked "add box to matrix"; return a list of resulting matrices
 def add_box_to_matrix_checked(matrix, c='a'):
     n_rows = len(matrix)
     lst = []
@@ -164,7 +137,8 @@ def add_box_to_matrix_checked(matrix, c='a'):
             lst.append(temp)
     return lst
 
-# add box to a list of matrices checked, avoid duplication too
+
+# add box to a list of matrices big_checked, avoid duplication too
 def add_box_to_matrix_list_checked(input_lst, c='a'):
     output = []
     for matrix in input_lst:
@@ -173,6 +147,7 @@ def add_box_to_matrix_list_checked(input_lst, c='a'):
             if x not in output:
                 output.append(x)
     return output
+
 
 # Finally, tensor "multiply" 2 tableaux!
 def multiply_tableaux(tab1, tab2):
