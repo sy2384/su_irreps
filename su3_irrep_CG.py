@@ -192,8 +192,6 @@ def multiply_tableaux(tab1, tab2):
 irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
 irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
 
-print(multiply_tableaux(irreps2[0], irreps2[0]))
-
 # other intermediate tests
 """
 for irrep in irreps:
