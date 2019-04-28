@@ -1,5 +1,7 @@
 from su3_irrep_CG import Tableau, multiply_tableaux
 
+
+# Enter a single SU(3) irrep tableau, take first 2 if >=2 integers entered
 def enter_irrep(n):
     while True:
         flag = True
@@ -18,6 +20,8 @@ def enter_irrep(n):
             except IndexError:
                 print("Need 2 Dynkin coefficients, try again!")
 
+
+# Print the result of Clebsch-Gordan decomposition from the tensor product of two SU(3) irreps
 def output_irrep():
     tab1 = enter_irrep(1)
     tab2 = enter_irrep(2)

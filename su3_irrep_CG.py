@@ -1,7 +1,8 @@
-# SU(3) irreps Clebsch-Gordan. This works!
-# Still, very rudimentary. Next step: generalized to SU(N)!
+# Clebsch-Gordan decomposition of tensor product of two SU(3) irreps (= irreducible representations). This works!
+# Still, very rudimentary. Next step: generalized to SU(N) / add interface!
 
 import copy
+
 
 class Tableau(): # Young tableau for SU(3) irrep
     def __init__(self, n, m):
@@ -163,30 +164,16 @@ def multiply_tableaux(tab1, tab2):
     return [to_tableau(matrix) for matrix in total_lst]
 
 
+
 # some tests
 # irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
 # irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
 
 # other intermediate tests
-"""
-for irrep in irreps:
-    print([to_tableau(item) for item in add_box_to_matrix_checked(irrep.matrix(), 'a')], end=';\n')
-
-for irrep in irreps:
-    lst = []
-    for i in range( 1 + len(irrep.matrix()) ):
-        temp = add_box_to_row(irrep.matrix(), 'a', i)
-        if big_check(temp):
-            lst.append(temp)
-    print(lst)
-
-trial1 = [[1, 'a'], ['a']]
-trial2 = [[1, 'a'], [2, 'a']]
-trial3 = [[1, 1, 'a'], [2, 'a', 'a']]
-trial4 = [[1, 1, 'a'], [2, 'a', 'b']]
-trial5 = []
-trial6 = [[1, 1, 'a'], [2, 'b', 'b']]
-trials = [trial1, trial2, trial3, trial4, trial5, trial6]
-for trial in trials:
-    print(no_double_check(trial), b_a_check(trial), row_length_check(trial))
-"""
+# trial1 = [[1, 'a'], ['a']]
+# trial2 = [[1, 'a'], [2, 'a']]
+# trial3 = [[1, 1, 'a'], [2, 'a', 'a']]
+# trial4 = [[1, 1, 'a'], [2, 'a', 'b']]
+# trial5 = []
+# trial6 = [[1, 1, 'a'], [2, 'b', 'b']]
+# trials = [trial1, trial2, trial3, trial4, trial5, trial6]
