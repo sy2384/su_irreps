@@ -169,11 +169,11 @@ def multiply_tableaux(tab1, tab2):
 # irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
 # irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
 
-# other intermediate tests
-# trial1 = [[1, 'a'], ['a']]
-# trial2 = [[1, 'a'], [2, 'a']]
-# trial3 = [[1, 1, 'a'], [2, 'a', 'a']]
-# trial4 = [[1, 1, 'a'], [2, 'a', 'b']]
+# intermediate tests for matrix checks
+# trial1 = [['1', 'a'], ['a']]
+# trial2 = [['1', 'a'], ['2', 'a']]
+# trial3 = [['1', '1', 'a'], ['2', 'a', 'a']]
+# trial4 = [['1', '1', 'a'], ['2', 'a', 'b']]
 # trial5 = []
-# trial6 = [[1, 1, 'a'], [2, 'b', 'b']]
+# trial6 = [['1', '1', 'a'], ['2', 'b', 'b']]
 # trials = [trial1, trial2, trial3, trial4, trial5, trial6]
