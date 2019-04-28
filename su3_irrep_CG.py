@@ -149,7 +149,7 @@ def add_box_to_matrix_list_checked(input_lst, c='a'):
     return output
 
 
-# Finally, tensor "multiply" 2 tableaux!
+# Finally, tensor "multiply" 2 tableaux! Returns a list of terms in the sum
 def multiply_tableaux(tab1, tab2):
     num_a = tab2.idx1 + tab2.idx2
     num_b = tab2.idx2
@@ -164,8 +164,8 @@ def multiply_tableaux(tab1, tab2):
 
 
 # some tests
-irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
-irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
+# irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
+# irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
 
 # other intermediate tests
 """
