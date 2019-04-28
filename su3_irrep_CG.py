@@ -1,3 +1,8 @@
+# SU(3) irreps Clebsh-Gordan. This works!
+# Still, very rudimentary. Next step: generalized to SU(N)!
+
+import copy
+
 class Tableau(): # Young tableau for SU(3) irrep
     def __init__(self, n, m):
         self.idx1 = n
@@ -18,15 +23,15 @@ class Tableau(): # Young tableau for SU(3) irrep
         init_matrix = []
         # First row
         if self.idx1 + self.idx2 > 0:
-            init_matrix.append([1] * (self.idx1 + self.idx2))
+            init_matrix.append(['1'] * (self.idx1 + self.idx2))
         # Second row
         if self.idx2 > 0:
-            init_matrix.append([2] * self.idx2)
+            init_matrix.append(['2'] * self.idx2)
         return init_matrix
 
 
-# Add a box to tableau -- could be 'a' or 'b'
-def add_a_box_to_tableau(tableau, c='a'):
+# Add a box to tableau -- could be 'a' or 'b' (NOT USED)
+def add_box_to_tableau(tableau, c='a'):
     result1 = tableau.matrix()
     number_of_rows = len(tableau.matrix())
     # result1: add c to the right of 1st row
@@ -52,32 +57,15 @@ def add_a_box_to_tableau(tableau, c='a'):
     return result
 
 
-# Add a box to matrix -- could be 'a' or 'b'
-def add_box_to_matrix(input_matrix, c='a'):
-    result1 = input_matrix
-    number_of_rows = len(input_matrix)
-    # result1: add c to the right of 1st row
-    if number_of_rows == 0:
-        result1.append([c])
-    else:
-        result1[0].append(c)
-    result = [result1]
-    # result2: add c to the right of 2nd row
-    if number_of_rows >= 1:
-        result2 = input_matrix
-        if number_of_rows == 1:
-            result2.append([c])
-            result.append(result2)
-        elif len(result2[0]) > len(result2[1]):
-            result2[1].append(c)
-            result.append(result2)
-    # result3: add c to 3rd row
-    if number_of_rows >= 2:
-        result3 = input_matrix
-        result3.append([c])
-        result.append(result3)
+# Add a box to the right of a specific row_index (NOTE: have to defind a deep copy first!)
+def add_box_to_row(input_matrix, c, row_index):
+    n_rows = len(input_matrix)
+    result = copy.deepcopy(input_matrix)
+    if row_index < n_rows:
+        result[row_index].append(c)
+    elif row_index == n_rows:
+        result.append([c])
     return result
-
 
 # Convert matrix back to Tableau
 def to_tableau(matrix):
@@ -95,21 +83,29 @@ def to_tableau(matrix):
     return Tableau(idx1, idx2)
 
 
-# Add a box to tableau and convert back
+# Add a box to tableau and convert back (NOT USED)
 def tab_add_c_then_to_tab(tableau, c='a'):
     lst =  add_a_box_to_tableau(tableau, c)
     return [to_tableau(item) for item in lst]
 
 
-# row length check
-def row_length_check(matrix):
-    row_lengths = [len(matrix[i]) for i in range(len(matrix))]
-    # row length check
-    for i in range(len(row_lengths) - 1):
-        if row_lengths[i] < row_lengths[i + 1]:
-            return False
+# number of rows check
+def n_rows_check(matrix):
+    if len(matrix) > 3:
+        return False
     return True
 
+# row length check
+def row_length_check(matrix):
+    if len(matrix) == 0:
+        return True
+    else:
+        row_lengths = [len(matrix[i]) for i in range(len(matrix))]
+        # row length check
+        for i in range(len(matrix) - 1):
+            if row_lengths[i] < row_lengths[i + 1]:
+                return False
+    return True
 
 # 'b_count <= a_count' check
 def b_a_check(matrix):
@@ -129,46 +125,54 @@ def b_a_check(matrix):
         k += 1
     return flag
 
-
-# no double 'a' or 'b' check
+# no double 'a' or 'b' check (NOTE: need a deepcopy too, in order not to affect input matrix)
 def no_double_check(matrix):
-    copy = matrix
-    if len(copy) == 0:
+    cpy = copy.deepcopy(matrix)
+    if len(cpy) == 0:
         return True
-    col_num = len(copy[0])
-    row_num = len(copy)
-    row_lengths = [len(copy[i]) for i in range(row_num)]
+    col_num = len(cpy[0])
+    row_num = len(cpy)
+    row_lengths = [len(cpy[i]) for i in range(row_num)]
     # fill in 0's to form a full rectangle
     for i in range(1, row_num):
-        copy[i] += ([0] * (col_num - row_lengths[i]))
+        cpy[i] += ['0'] * (col_num - row_lengths[i])
     for j in range(col_num):
         a_count = 0
         b_count = 0
         k = 0
-        while (k < row_num) and (copy[k][j] != 0):
-            if copy[k][j] == 'a':
+        while (k < row_num) and (cpy[k][j] != '0'):
+            if cpy[k][j] == 'a':
                 a_count += 1
-            if copy[k][j] == 'b':
+            if cpy[k][j] == 'b':
                 b_count += 1
             if (a_count >= 2) or (b_count >= 2):
                 return False
             k += 1
     return True
 
-
-# big_check
+# overall check
 def big_check(matrix):
-    return (row_length_check(matrix) and b_a_check(matrix)) and no_double_check(matrix)
+    return (row_length_check(matrix) and b_a_check(matrix)) and (no_double_check(matrix) and n_rows_check(matrix))
 
+# checked add_box_to_matrix_checked
+def add_box_to_matrix_checked(matrix, c='a'):
+    n_rows = len(matrix)
+    lst = []
+    for i in range(n_rows + 1):
+        temp = add_box_to_row(matrix, c, i)
+        if big_check(temp):
+            lst.append(temp)
+    return lst
 
-# One iteration for a given list of tableaux (unfinished, no check)
-def add_a_box_list(input_lst, c='a'):
-    lst1 = []
-    for tab in input_lst:
-        temp = tab_add_c_then_to_tab(tab, c)
-        lst1 += temp
-    return lst1
-
+# add box to a list of matrices checked, avoid duplication too
+def add_box_to_matrix_list_checked(input_lst, c='a'):
+    output = []
+    for matrix in input_lst:
+        temp1 = add_box_to_matrix_checked(matrix, c)
+        for x in temp1:
+            if x not in output:
+                output.append(x)
+    return output
 
 # Finally, tensor "multiply" 2 tableaux!
 def multiply_tableaux(tab1, tab2):
@@ -176,30 +180,40 @@ def multiply_tableaux(tab1, tab2):
     num_b = tab2.idx2
     if num_a == 0:
         return [tab1]
-    CG_decomp = [tab1]
+    total_lst = [tab1.matrix()]
     for i in range(num_a):
-        CG_decomp = add_a_box_list(CG_decomp, 'a')
+        total_lst = add_box_to_matrix_list_checked(total_lst, 'a')
     for i in range(num_b):
-        CG_decomp = add_a_box_list(CG_decomp, 'b')
-    return [thing for thing in CG_decomp]
+        total_lst = add_box_to_matrix_list_checked(total_lst, 'b')
+    return [to_tableau(matrix) for matrix in total_lst]
 
 
 # some tests
-irreps = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2), Tableau(1, 1), Tableau(2, 1), Tableau(1, 2), Tableau(0, 3), Tableau(2, 2)]
+irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
+irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
+
+print(multiply_tableaux(irreps2[5], irreps2[4]))
+
+# other intermediate tests
+"""
+for irrep in irreps:
+    print([to_tableau(item) for item in add_box_to_matrix_checked(irrep.matrix(), 'a')], end=';\n')
 
 for irrep in irreps:
-    print([item for item in add_box_to_matrix(irrep.matrix(), 'a')])
-# for irrep in irreps:
-#     print([item for item in add_a_box_to_tableau(irrep, 'a')])
+    lst = []
+    for i in range( 1 + len(irrep.matrix()) ):
+        temp = add_box_to_row(irrep.matrix(), 'a', i)
+        if big_check(temp):
+            lst.append(temp)
+    print(lst)
 
 trial1 = [[1, 'a'], ['a']]
 trial2 = [[1, 'a'], [2, 'a']]
 trial3 = [[1, 1, 'a'], [2, 'a', 'a']]
 trial4 = [[1, 1, 'a'], [2, 'a', 'b']]
 trial5 = []
-trials = [trial1, trial2, trial3, trial4, trial5]
-
+trial6 = [[1, 1, 'a'], [2, 'b', 'b']]
+trials = [trial1, trial2, trial3, trial4, trial5, trial6]
 for trial in trials:
-    print(no_double_check(trial))
-
-# print(multiply_tableaux(irreps[1], irreps[2]))
+    print(no_double_check(trial), b_a_check(trial), row_length_check(trial))
+"""
