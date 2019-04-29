@@ -33,4 +33,5 @@ def output_irrep():
     message = str(tab1) + ' \u2297 ' + str(tab2) + " = " + rhs
     print(message)
 
+
 output_irrep()

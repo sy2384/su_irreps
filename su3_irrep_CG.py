@@ -47,14 +47,15 @@ def to_tableau(matrix):
     number_of_rows = len(matrix)
     idx1 = 0
     idx2 = 0
-    if number_of_rows == 1:
-        idx1 = len(matrix[0])
-    elif number_of_rows == 2:
-        idx2 = len(matrix[1])
-        idx1 = len(matrix[0]) - len(matrix[1])
-    else:
-        idx2 = len(matrix[1]) - len(matrix[-1])
-        idx1 = len(matrix[0]) - len(matrix[1])
+    if number_of_rows:
+        if number_of_rows == 1:
+            idx1 = len(matrix[0])
+        elif number_of_rows == 2:
+            idx2 = len(matrix[1])
+            idx1 = len(matrix[0]) - len(matrix[1])
+        else:
+            idx2 = len(matrix[1]) - len(matrix[-1])
+            idx1 = len(matrix[0]) - len(matrix[1])
     return Tableau(idx1, idx2)
 
 
@@ -154,12 +155,10 @@ def add_box_to_matrix_list_checked(input_lst, c='a'):
 def multiply_tableaux(tab1, tab2):
     num_a = tab2.idx1 + tab2.idx2
     num_b = tab2.idx2
-    if num_a == 0:
-        return [tab1]
     total_lst = [tab1.matrix()]
-    for i in range(num_a):
+    for _ in range(num_a):
         total_lst = add_box_to_matrix_list_checked(total_lst, 'a')
-    for i in range(num_b):
+    for _ in range(num_b):
         total_lst = add_box_to_matrix_list_checked(total_lst, 'b')
     return [to_tableau(matrix) for matrix in total_lst]
 
@@ -177,3 +176,7 @@ def multiply_tableaux(tab1, tab2):
 # trial5 = []
 # trial6 = [['1', '1', 'a'], ['2', 'b', 'b']]
 # trials = [trial1, trial2, trial3, trial4, trial5, trial6]
+
+# Both '[]' and '[[]]' represent (0, 0)[1] for well-definedness:
+# to_tableau(Tableau(0, 0).matrix()))
+# to_tableau([[]])
