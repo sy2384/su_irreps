@@ -1,5 +1,3 @@
-# Input file = 'test_cases.csv', output file = 'result.txt'
-
 from su3_irrep_CG import Tableau, multiply_tableaux
 import csv
 
@@ -19,25 +17,28 @@ def irrep_result_str(lst):
     return message
 
 
-
-with open('test_cases.csv', newline='') as tests:
-    tests_reader = csv.reader(tests)
-    tests_input = []
-    for row in tests_reader:
-        input_row = []
-        for item in row:
-            try:
-                if int(item) < 0:
-                    break
-                else:
-                    input_row.append(int(item))
-            except ValueError:
-                input_row = []
-                break
-        if len(input_row) <= 3:
+# Write to file -- by default, input file = 'test_cases.csv', output file = 'result.txt'
+def write_to_file(input_file='test_cases.csv', output_file='result.txt'):
+    with open(input_file, newline='') as tests:
+        tests_reader = csv.reader(tests)
+        tests_input = []
+        for row in tests_reader:
             input_row = []
-        tests_input.append(input_row)
+            for item in row:
+                try:
+                    if int(item) < 0:
+                        break
+                    else:
+                        input_row.append(int(item))
+                except ValueError:
+                    input_row = []
+                    break
+            if len(input_row) <= 3:
+                input_row = []
+            tests_input.append(input_row)
+    with open(output_file, 'w') as results:
+        for line in tests_input:
+            results.write(irrep_result_str(line)+'\n')
 
-with open('result.txt', 'w') as results:
-    for line in tests_input:
-        results.write(irrep_result_str(line)+'\n')
+
+write_to_file()
