@@ -164,10 +164,6 @@ def multiply_tableaux(tab1, tab2):
 
 
 
-# some tests
-# irreps1 = [Tableau(0, 0), Tableau(1, 0), Tableau(0, 1), Tableau(2, 0), Tableau(0, 2)]
-# irreps2 = [Tableau(1, 1), Tableau(3, 0), Tableau(0, 3), Tableau(2, 1), Tableau(1, 2), Tableau(2, 2)]
-
 # intermediate tests for matrix checks
 # trial1 = [['1', 'a'], ['a']]
 # trial2 = [['1', 'a'], ['2', 'a']]
