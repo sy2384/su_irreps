@@ -42,26 +42,25 @@ def add_box_to_row(input_matrix, c, row_index):
     return result
 
 
-# Convert matrix back to Tableau
-def to_tableau(matrix):
+# Convert matrix back to Tableau -- generalized to any dim
+def to_tableau(matrix, dim=3):
     number_of_rows = len(matrix)
-    idx1 = 0
-    idx2 = 0
+    idx = [0] * (dim - 1)
     if number_of_rows:
-        if number_of_rows == 1:
-            idx1 = len(matrix[0])
-        elif number_of_rows == 2:
-            idx2 = len(matrix[1])
-            idx1 = len(matrix[0]) - len(matrix[1])
-        else:
-            idx2 = len(matrix[1]) - len(matrix[-1])
-            idx1 = len(matrix[0]) - len(matrix[1])
-    return Tableau(idx1, idx2)
+        for k in range(number_of_rows):
+            if k < number_of_rows - 1:
+                idx[k] = len(matrix[k]) - len(matrix[k + 1])
+            else:
+                try:
+                    idx[k] = len(matrix[k])
+                except IndexError:
+                    pass
+    return Tableau(*idx)
 
 
-# number of rows check
-def n_rows_check(matrix):
-    if len(matrix) > 3:
+# number of rows check -- generalized to any dim
+def n_rows_check(matrix, dim=3):
+    if len(matrix) > dim:
         return False
     return True
 
