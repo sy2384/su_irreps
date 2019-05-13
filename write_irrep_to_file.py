@@ -1,4 +1,4 @@
-from su3_irrep_CG import Tableau, multiply_tableaux
+from su3_irrep_CG import Irrep, multiply_irreps
 import csv
 
 
@@ -6,9 +6,9 @@ import csv
 def irrep_result_str(lst):
     message = "Need two pairs of nonnegative integers as Dynkin coefficients, try again!"
     if lst:
-        tab1 = Tableau(lst[0], lst[1])
-        tab2 = Tableau(lst[2], lst[3])
-        result = multiply_tableaux(tab1, tab2)
+        tab1 = Irrep(lst[0], lst[1])
+        tab2 = Irrep(lst[2], lst[3])
+        result = multiply_irreps(tab1, tab2)
         rhs = ''
         for tab in result:
             rhs += str(tab) + ' \u2295 '

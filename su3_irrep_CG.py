@@ -4,7 +4,7 @@
 import copy
 
 
-class Tableau(): # Young tableau for SU(3) irrep
+class Irrep():  # A class object for SU(3) irrep
     def __init__(self, n, m):
         self.idx1 = n
         self.idx2 = m
@@ -42,8 +42,8 @@ def add_box_to_row(input_matrix, c, row_index):
     return result
 
 
-# Convert matrix back to Tableau -- generalized to any dim
-def to_tableau(matrix, dim=3):
+# Convert matrix back to Irrep -- generalized to any dim
+def to_irrep(matrix, dim=3):
     number_of_rows = len(matrix)
     idx = [0] * (dim - 1)
     if number_of_rows:
@@ -55,7 +55,7 @@ def to_tableau(matrix, dim=3):
                     idx[k] = len(matrix[k])
                 except IndexError:
                     pass
-    return Tableau(*idx)
+    return Irrep(*idx)
 
 
 # number of rows check -- generalized to any dim
@@ -150,8 +150,8 @@ def add_box_to_matrix_list_checked(input_lst, c='a'):
     return output
 
 
-# Finally, tensor "multiply" 2 tableaux! Returns a list of terms in the sum
-def multiply_tableaux(tab1, tab2):
+# Finally, tensor "multiply" 2 irreps! Returns a list of terms in the sum
+def multiply_irreps(tab1, tab2):
     num_a = tab2.idx1 + tab2.idx2
     num_b = tab2.idx2
     total_lst = [tab1.matrix()]
@@ -159,7 +159,7 @@ def multiply_tableaux(tab1, tab2):
         total_lst = add_box_to_matrix_list_checked(total_lst, 'a')
     for _ in range(num_b):
         total_lst = add_box_to_matrix_list_checked(total_lst, 'b')
-    return [to_tableau(matrix) for matrix in total_lst]
+    return [to_irrep(matrix) for matrix in total_lst]
 
 
 
@@ -173,5 +173,5 @@ def multiply_tableaux(tab1, tab2):
 # trials = [trial1, trial2, trial3, trial4, trial5, trial6]
 
 # Both '[]' and '[[]]' represent (0, 0)[1] for well-definedness:
-# to_tableau(Tableau(0, 0).matrix()))
-# to_tableau([[]])
+# to_irrep(Irrep(0, 0).matrix()))
+# to_irrep([[]])

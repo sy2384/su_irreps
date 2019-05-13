@@ -1,7 +1,7 @@
-from su3_irrep_CG import Tableau, multiply_tableaux
+from su3_irrep_CG import Irrep, multiply_irreps
 
 
-# Enter a single SU(3) irrep tableau, take first 2 if >=2 integers entered
+# Enter a single SU(3) irrep, take first 2 if >=2 integers entered
 def enter_irrep(n):
     while True:
         flag = True
@@ -16,7 +16,7 @@ def enter_irrep(n):
                 break
         if flag:
             try:
-                return Tableau(irrep[0], irrep[1])
+                return Irrep(irrep[0], irrep[1])
             except IndexError:
                 print("Need 2 Dynkin coefficients, try again!")
 
@@ -25,7 +25,7 @@ def enter_irrep(n):
 def output_irrep():
     tab1 = enter_irrep(1)
     tab2 = enter_irrep(2)
-    result = multiply_tableaux(tab1, tab2)
+    result = multiply_irreps(tab1, tab2)
     rhs = ''
     for tab in result:
         rhs += str(tab) + ' \u2295 '
