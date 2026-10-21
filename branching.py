@@ -3,8 +3,7 @@
 # An embedding of H in G is described by its projection matrix: a linear map from the weights of G (Dynkin labels) to
 # the weights of H (the Dynkin labels of each simple factor and a charge for each U(1), in the order of the factors).
 # To branch an irrep of G, project all its weights and peel off the H irreps from the top: the highest projected
-# weight is the highest weight of
-# an H irrep, whose weights are then removed, and so on.
+# weight is the highest weight of an H irrep, whose weights are then removed, and so on.
 #
 # The projection matrices are not copied from tables. They are built from the embeddings themselves:
 #   - regular subalgebras, from a set of roots of G (deleting nodes of the extended Dynkin diagram, Borel-de Siebenthal,
