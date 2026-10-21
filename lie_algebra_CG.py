@@ -156,21 +156,43 @@ class SimpleLieAlgebra():
             weight = self.reflect(weight, i)
             steps += 1
 
-    # All elements of the Weyl group orbit of a dominant weight
+    # Like dominant, for the Racah-Speiser step: returns None as soon as a coordinate is 0. Then a simple
+    # reflection fixes the weight, so its dominant image lies on a wall too and it contributes nothing.
+    def strictly_dominant(self, weight):
+        weight = list(weight)
+        rows = self.cartan
+        steps = 0
+        while True:
+            i = -1
+            for j, x in enumerate(weight):
+                if x <= 0:
+                    if x == 0:
+                        return None
+                    if i < 0:
+                        i = j
+            if i < 0:
+                return tuple(weight), steps
+            c = weight[i]
+            weight = [w - c * a for w, a in zip(weight, rows[i])]
+            steps += 1
+
+    # All elements of the Weyl group orbit of a dominant weight, each exactly once, without remembering them:
+    # every other element v has a unique parent s_j v, where j is the first negative coordinate of v
     def orbit(self, weight):
-        seen = {tuple(weight)}
-        layer = [tuple(weight)]
-        while layer:
-            next_layer = []
-            for w in layer:
-                for i in range(self.rank):
-                    if w[i] > 0:
-                        image = self.reflect(w, i)
-                        if image not in seen:
-                            seen.add(image)
-                            next_layer.append(image)
-            layer = next_layer
-        return seen
+        rows = self.cartan
+        rank = self.rank
+        stack = [tuple(weight)]
+        while stack:
+            u = stack.pop()
+            yield u
+            for i in range(rank):
+                c = u[i]
+                if c > 0:
+                    row = rows[i]
+                    v = tuple(x - c * a for x, a in zip(u, row))
+                    # v_i = -c < 0, so i must be the first negative coordinate of v
+                    if all(v[k] >= 0 for k in range(i)):
+                        stack.append(v)
 
     # Weyl dimension formula: product over positive roots of (lambda + rho, alpha) / (rho, alpha)
     def dimension(self, labels):
@@ -235,7 +257,7 @@ class SimpleLieAlgebra():
         result = Counter()
         for mu, m in self.dominant_multiplicities(labels).items():
             for w in self.orbit(mu):
-                result[w] = m
+                result[w] += m
         return result
 
 
@@ -314,9 +336,15 @@ def _weights(algebra, labels):
     return algebra.weights(labels)
 
 
+@lru_cache(maxsize=256)
+def _dominant_multiplicities(algebra, labels):
+    return algebra.dominant_multiplicities(labels)
+
+
 # Racah-Speiser: irrep1 x irrep2 = sum over weights nu of irrep2 of sign(w) [w(lambda + nu + rho) - rho].
-# Returns a list of (irrep, multiplicity), largest dimension first
-def decompose(irrep1, irrep2):
+# Returns a list of (irrep, multiplicity), largest dimension first.
+# The work is one step per distinct weight of the smaller factor; past 'max_weights' steps a ValueError is raised.
+def decompose(irrep1, irrep2, max_weights=None):
     if irrep1.algebra != irrep2.algebra:
         raise ValueError("Cannot multiply a {} irrep by a {} irrep".format(irrep1.algebra.name, irrep2.algebra.name))
     algebra = irrep1.algebra
@@ -324,17 +352,24 @@ def decompose(irrep1, irrep2):
     big, small = sorted([irrep1, irrep2], key=lambda irrep: (irrep.dim, irrep.labels), reverse=True)
     shifted = tuple(x + 1 for x in big.labels)
     terms = Counter()
-    for nu, m in small.weights().items():
-        w, steps = algebra.dominant(tuple(a + b for a, b in zip(shifted, nu)))
-        if 0 in w:
-            continue
-        terms[tuple(x - 1 for x in w)] += -m if steps % 2 else m
+    count = 0
+    for mu, m in _dominant_multiplicities(algebra, small.labels).items():
+        for nu in algebra.orbit(mu):
+            count += 1
+            if max_weights is not None and count > max_weights:
+                raise ValueError("{} has more than {} distinct weights; too large to multiply here"
+                                 .format(small, max_weights))
+            reflected = algebra.strictly_dominant([a + b for a, b in zip(shifted, nu)])
+            if reflected is None:
+                continue
+            w, steps = reflected
+            terms[tuple(x - 1 for x in w)] += -m if steps % 2 else m
     result = [(LieIrrep(algebra, labels), mult) for labels, mult in terms.items() if mult]
     assert all(mult > 0 for _, mult in result), "Racah-Speiser left a negative multiplicity"
     return sorted(result, key=lambda item: (-item[0].dim, tuple(-x for x in item[0].labels)))
 
 
-def decompose_many(irreps):
+def decompose_many(irreps, max_weights=None):
     irreps = list(irreps)
     if not irreps:
         raise ValueError("Need at least one irrep")
@@ -342,7 +377,7 @@ def decompose_many(irreps):
     for factor in irreps[1:]:
         new_terms = Counter()
         for irrep, mult in terms.items():
-            for result, m in decompose(irrep, factor):
+            for result, m in decompose(irrep, factor, max_weights):
                 new_terms[result] += mult * m
         terms = new_terms
     return sorted(terms.items(), key=lambda item: (-item[0].dim, tuple(-x for x in item[0].labels)))

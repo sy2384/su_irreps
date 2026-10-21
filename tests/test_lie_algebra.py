@@ -312,3 +312,10 @@ def test_format_product():
 def test_mismatched_algebras():
     with pytest.raises(ValueError):
         decompose(LieIrrep('B2', (1, 0)), LieIrrep('C2', (1, 0)))
+
+
+def test_max_weights():
+    a = LieIrrep('E8', (0,) * 7 + (1,))   # 248: 240 roots + the zero weight
+    assert dims(decompose(a, a, max_weights=241))[0] == 30380
+    with pytest.raises(ValueError):
+        decompose(a, a, max_weights=240)
