@@ -1,4 +1,5 @@
-# Web app for Clebsch-Gordan decompositions of tensor products of irreps of simple Lie algebras. Run with:
+# Web app for Clebsch-Gordan decompositions of tensor products of irreps of simple Lie algebras, and for branching
+# rules (branching.py). Run with:
 #   python app.py
 # (also works as app.py of a Hugging Face Space, together with requirements.txt)
 # SU(N) products use Young tableaux (sun_irrep_CG.py); SO(N), Sp(N), G2, F4, E6, E7, E8 use weights (lie_algebra_CG.py).
@@ -8,6 +9,7 @@ import re
 
 import gradio as gr
 
+import branching
 import lie_algebra_CG
 import sun_irrep_CG
 from lie_algebra_CG import LieIrrep, lie_algebra
@@ -20,6 +22,7 @@ MAX_RANK = 12        # for the other algebras
 MAX_WEIGHTS = 400000  # distinct weights of a factor, for the other algebras
 MAX_FACTORS = 4
 MAX_ROWS_SHOWN = 400
+MAX_BRANCH_WEIGHTS = 300000  # distinct weights of the irrep being branched
 
 DYNKIN = "Dynkin labels"
 PARTITION = "Young diagram rows"
@@ -165,6 +168,107 @@ def compute(group, mode, *texts):
     return render(factors, terms), lie_algebra_CG.format_product(factors, terms)
 
 
+# ---- branching rules ----
+
+def parse_group_irrep(algebra, text):
+    numbers = parse_numbers(text)
+    if not numbers:
+        numbers = [0] * algebra.rank
+    if len(numbers) != algebra.rank:
+        raise ValueError("{} irreps need {} Dynkin labels, '{}' has {}".format(algebra.name, algebra.rank, text,
+                                                                              len(numbers)))
+    return LieIrrep(algebra, numbers)
+
+
+def dimension_html(irrep):
+    level = branching.prime_level(irrep.algebra, irrep.labels)
+    text = '<b>{}</b>{}'.format(irrep.dim, '′' * level)
+    if irrep.bar:
+        text = '<span style="text-decoration: overline">{}</span>'.format(text)
+    return text
+
+
+# An irrep of the subalgebra in Slansky's notation, e.g. (3, 2)(1)
+def sub_html(sub):
+    names = [dimension_html(irrep) for irrep in sub.irreps]
+    text = names[0] if len(names) == 1 else '(' + ', '.join(names) + ')' if names else ''
+    return text + ''.join('({})'.format(q) for q in sub.charges)
+
+
+def render_branching(irrep, e, terms):
+    cell = '<td style="padding:2px 8px">{}</td>'
+    header = '<th style="text-align:left;padding:2px 8px">{}</th>'
+    rhs = ' ⊕ '.join((str(m) + '·' if m > 1 else '') + sub_html(sub) for sub, m in terms[:60])
+    if len(terms) > 60:
+        rhs += ' ⊕ …'
+    u1s = [i for i, f in enumerate(e.factors) if branching.is_u1(f)]
+    heads = ''.join(header.format(html.escape(f.name if i not in u1s else
+                                              'U(1)' if len(u1s) == 1 else 'U(1) #{}'.format(u1s.index(i) + 1)))
+                    for i, f in enumerate(e.factors))
+    rows = ''.join('<tr>' + cell.format(m) + cell.format(sub_html(sub)) +
+                   ''.join(cell.format(p if isinstance(p, branching.Fraction) else
+                                       '<code>({})</code>'.format(', '.join(str(x) for x in p.labels)))
+                           for p in sub.parts) + '</tr>'
+                   for sub, m in terms[:MAX_ROWS_SHOWN])
+    more = ''
+    if len(terms) > MAX_ROWS_SHOWN:
+        more = '<p>Showing the {} largest of {} distinct irreps.</p>'.format(MAX_ROWS_SHOWN, len(terms))
+    check = sum(sub.dim * m for sub, m in terms)
+    conventions = ''.join('<li>{}</li>'.format(html.escape(line)) for line in branching.describe(e))
+    return (
+        '<div style="font-size:1.1em;line-height:1.8">{lhs} = {rhs}</div>'
+        '<p>{count} irreps in total ({distinct} distinct). Dimension check: {dim} = {check} {ok}</p>'
+        '<p>{g} ⊃ {h}: {description}. Conventions:</p><ul>{conventions}</ul>'
+        '<table style="border-collapse:collapse;margin-top:8px"><tr>{mult}{irrep}{heads}</tr>{rows}</table>{more}'
+    ).format(lhs=dimension_html(irrep), rhs=rhs, count=sum(m for _, m in terms), distinct=len(terms), dim=irrep.dim,
+             check=check, ok='✔' if check == irrep.dim else '✘', g=html.escape(e.parent[0].name),
+             h=html.escape(e.name), description=html.escape(e.description), conventions=conventions,
+             mult=header.format('Multiplicity'), irrep=header.format('Irrep'), heads=heads, rows=rows, more=more)
+
+
+# Returns (html result, plain text) for the branching rules tab
+def compute_branching(group, subgroup, irrep_text):
+    try:
+        algebra = parse_algebra(group)
+        e = branching.embedding(algebra, str(subgroup or ''))
+        irrep = parse_group_irrep(algebra, irrep_text or '')
+        terms = branching.branch(irrep, e, max_weights=MAX_BRANCH_WEIGHTS)
+    except ValueError as error:
+        return '<p style="color:#c0392b">{}</p>'.format(html.escape(str(error))), ''
+    return render_branching(irrep, e, terms), branching.format_branching(irrep, terms)
+
+
+def subgroup_choices(group):
+    try:
+        return branching.known_subgroups(parse_algebra(str(group).strip()))
+    except ValueError:
+        return []
+
+
+# When the group changes: new suggestions, and the first of them replaces the subgroup if that does not fit any more
+def update_subgroups(group, subgroup):
+    choices = subgroup_choices(group)
+    if choices:
+        try:
+            branching.embedding(parse_algebra(group), subgroup)
+        except ValueError:
+            subgroup = choices[0]
+    return gr.Dropdown(choices=choices, value=None), subgroup
+
+
+BRANCH_EXAMPLES = [
+    ["SU(5)", "SU(3)xSU(2)xU(1)", "0, 1, 0, 0"],                       # the 10 of SU(5)
+    ["SO(10)", "SU(5)xU(1)", "0, 0, 0, 1, 0"],                         # the 16 of SO(10)
+    ["SO(10)", "SU(4)xSU(2)xSU(2)", "0, 0, 0, 2, 0"],                  # the 126 of SO(10)
+    ["SO(10)", "SU(5)xU(1) > SU(3)xSU(2)xU(1)xU(1)", "0, 0, 0, 1, 0"],
+    ["E6", "SO(10)xU(1)", "1, 0, 0, 0, 0, 0"],                         # the 27 of E6
+    ["E6", "SU(3)xSU(3)xSU(3)", "0, 1, 0, 0, 0, 0"],                   # the 78 of E6
+    ["E7", "SU(2)xF4", "0, 0, 0, 0, 0, 0, 1"],
+    ["E8", "SU(2)", "0, 0, 0, 0, 0, 0, 0, 1"],                          # principal SU(2): spins = exponents
+    ["G2", "SU(3)", "1, 0"],
+]
+
+
 EXAMPLES = [
     ["SU(3)", DYNKIN, "1, 0", "0, 1", ""],        # 3 x 3bar = 8 + 1
     ["SU(3)", DYNKIN, "1, 1", "1, 1", ""],        # 8 x 8
@@ -183,34 +287,67 @@ EXAMPLES = [
 
 def build_demo():
     with gr.Blocks(title="Clebsch-Gordan decomposition") as demo:
-        gr.Markdown(
-            "# Clebsch-Gordan decomposition\n"
-            "Decompose a tensor product of irreducible representations of SU(N), SO(N), Sp(N), G2, F4, E6, E7 or E8 "
-            "into irreducible ones. SU(N) uses Young tableaux (the Littlewood-Richardson rule; see Georgi, *Lie "
-            "Algebras in Particle Physics*); the other groups use weights (Freudenthal's formula and the "
-            "Racah-Speiser algorithm).\n\n"
-            "Enter each irrep as its Dynkin labels in the Bourbaki numbering, e.g. `1, 1` for the SU(3) octet or "
-            "`0, 0, 0, 1, 0` for the 16 of SO(10). SU(N) irreps can also be entered as the row lengths of their "
-            "Young diagram, e.g. `2, 1`. An irrep is marked with a bar when its Dynkin labels are lexicographically "
-            "smaller than those of its conjugate.")
-        with gr.Row():
-            n = gr.Textbox(value="SU(3)", label="Group",
-                           info="SU(N), SO(N), Sp(N), G2, F4, E6, E7, E8 (or A3, B4, C2, D5, ...)")
-            mode = gr.Radio([DYNKIN, PARTITION], value=DYNKIN, label="Enter irreps as")
-        with gr.Row():
-            first = gr.Textbox(value="1, 1", label="Irrep 1")
-            second = gr.Textbox(value="1, 1", label="Irrep 2")
-            third = gr.Textbox(value="", label="Irrep 3 (optional)")
-            fourth = gr.Textbox(value="", label="Irrep 4 (optional)")
-        button = gr.Button("Decompose", variant="primary")
-        result = gr.HTML()
-        text = gr.Textbox(label="As text", lines=2)
-        inputs = [n, mode, first, second, third, fourth]
-        gr.Examples([example + [""] for example in EXAMPLES], inputs=inputs)
-        button.click(compute, inputs=inputs, outputs=[result, text])
-        for box in [first, second, third, fourth]:
-            box.submit(compute, inputs=inputs, outputs=[result, text])
+        with gr.Tab("Tensor products"):
+            gr.Markdown(
+                "# Clebsch-Gordan decomposition\n"
+                "Decompose a tensor product of irreducible representations of SU(N), SO(N), Sp(N), G2, F4, E6, E7 or "
+                "E8 into irreducible ones. SU(N) uses Young tableaux (the Littlewood-Richardson rule; see Georgi, *Lie "
+                "Algebras in Particle Physics*); the other groups use weights (Freudenthal's formula and the "
+                "Racah-Speiser algorithm).\n\n"
+                "Enter each irrep as its Dynkin labels in the Bourbaki numbering, e.g. `1, 1` for the SU(3) octet or "
+                "`0, 0, 0, 1, 0` for the 16 of SO(10). SU(N) irreps can also be entered as the row lengths of their "
+                "Young diagram, e.g. `2, 1`. An irrep is marked with a bar when its Dynkin labels are "
+                "lexicographically smaller than those of its conjugate.")
+            with gr.Row():
+                n = gr.Textbox(value="SU(3)", label="Group",
+                               info="SU(N), SO(N), Sp(N), G2, F4, E6, E7, E8 (or A3, B4, C2, D5, ...)")
+                mode = gr.Radio([DYNKIN, PARTITION], value=DYNKIN, label="Enter irreps as")
+            with gr.Row():
+                first = gr.Textbox(value="1, 1", label="Irrep 1")
+                second = gr.Textbox(value="1, 1", label="Irrep 2")
+                third = gr.Textbox(value="", label="Irrep 3 (optional)")
+                fourth = gr.Textbox(value="", label="Irrep 4 (optional)")
+            button = gr.Button("Decompose", variant="primary")
+            result = gr.HTML()
+            text = gr.Textbox(label="As text", lines=2)
+            inputs = [n, mode, first, second, third, fourth]
+            gr.Examples([example + [""] for example in EXAMPLES], inputs=inputs)
+            button.click(compute, inputs=inputs, outputs=[result, text])
+            for box in [first, second, third, fourth]:
+                box.submit(compute, inputs=inputs, outputs=[result, text])
+        with gr.Tab("Branching rules"):
+            gr.Markdown(
+                "# Branching rules\n"
+                "Decompose an irrep of a group G into irreps of a subgroup H, e.g. SU(5) ⊃ SU(3)×SU(2)×U(1) or "
+                "E6 ⊃ SO(10)×U(1). Pick a subgroup from the list or type one: a product of factors such as "
+                "`SU(3)xSU(2)xU(1)`, or a chain such as `SU(5)xU(1) > SU(3)xSU(2)xU(1)xU(1)`, where each step breaks "
+                "one factor and the new factors take its place. Regular subgroups (from the extended Dynkin diagram, "
+                "with a U(1) for each deleted node) are found automatically; `SU(2)` alone is the principal SU(2) "
+                "unless a regular or classical one is known.\n\n"
+                "Irreps of H are written as in Slansky's tables: dimensions of the simple factors (primes tell apart "
+                "irreps of the same dimension, by their index), then the U(1) charges, normalized to the smallest "
+                "integers. Signs and normalizations of U(1) charges are conventions; the ones used are shown with "
+                "each result. Hypercharge in SU(5) ⊃ SU(3)×SU(2)×U(1) is the U(1) charge divided by 6.")
+            with gr.Row():
+                b_group = gr.Textbox(value="SU(5)", label="Group G", info="SU(N), SO(N), Sp(N), G2, F4, E6, E7, E8")
+                b_subgroup = gr.Textbox(value="SU(3)xSU(2)xU(1)", label="Subgroup H",
+                                        info="e.g. SU(3)xSU(2)xU(1), or a chain A > B")
+                b_known = gr.Dropdown(choices=subgroup_choices("SU(5)"), value=None, label="Known subgroups of G",
+                                      info="pick one to fill in H")
+                b_irrep = gr.Textbox(value="0, 1, 0, 0", label="Irrep of G (Dynkin labels)")
+            b_button = gr.Button("Branch", variant="primary")
+            b_result = gr.HTML()
+            b_text = gr.Textbox(label="As text", lines=2)
+            b_inputs = [b_group, b_subgroup, b_irrep]
+            gr.Examples(BRANCH_EXAMPLES, inputs=b_inputs)
+            b_group.change(update_subgroups, inputs=[b_group, b_subgroup], outputs=[b_known, b_subgroup])
+            b_known.input(lambda choice, current: choice or current, inputs=[b_known, b_subgroup],
+                          outputs=b_subgroup)
+            b_button.click(compute_branching, inputs=b_inputs, outputs=[b_result, b_text])
+            for box in [b_subgroup, b_irrep]:
+                box.submit(compute_branching, inputs=b_inputs, outputs=[b_result, b_text])
         demo.load(compute, inputs=inputs, outputs=[result, text])
+        demo.load(compute_branching, inputs=b_inputs, outputs=[b_result, b_text])
     return demo
 
 

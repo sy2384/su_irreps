@@ -3,7 +3,8 @@ import pytest
 
 pytest.importorskip("gradio")
 
-from app import parse_numbers, parse_irrep, parse_factors, compute, young_svg, DYNKIN, PARTITION, EXAMPLES
+from app import parse_numbers, parse_irrep, parse_factors, compute, young_svg, DYNKIN, PARTITION, EXAMPLES, \
+    compute_branching, subgroup_choices, BRANCH_EXAMPLES
 from lie_algebra_CG import LieIrrep, lie_algebra
 from sun_irrep_CG import IrrepSUN
 
@@ -91,3 +92,44 @@ def test_young_svg():
     assert "<svg" not in young_svg(IrrepSUN(3, (0, 0)))
     assert young_svg(LieIrrep('G2', (1, 0))) == ''
 
+
+
+# ---- branching rules tab ----
+
+def test_compute_branching_su5():
+    page, text = compute_branching("SU(5)", "SU(3)xSU(2)xU(1)", "0, 1, 0, 0")
+    assert text == "10 = (3, 2)(1) + (3bar, 1)(-4) + (1, 1)(6)"
+    assert "10 = 10 ✔" in page
+    assert "5 = (3, 1)(-2) + (1, 2)(3)" in page   # the conventions
+
+
+def test_compute_branching_chain():
+    page, text = compute_branching("SO(10)", "SU(5)xU(1) > SU(3)xSU(2)xU(1)xU(1)", "0, 0, 0, 1, 0")
+    assert text.startswith("16 = ") and "16 = 16 ✔" in page and "U(1) #2" in page
+
+
+@pytest.mark.parametrize("group, subgroup, irrep, message", [
+    ("SU(5)", "E6", "1, 0, 0, 0", "Could not find"),
+    ("SU(5)", "SU(3)xSU(2)xU(1)", "1, 0", "need 4 Dynkin labels"),
+    ("E8", "SO(16)", "1, 1, 1, 1, 1, 1, 1, 1", "too large"),
+    ("X3", "SU(2)", "1", "Unknown Lie algebra"),
+    ("SU(3)", "", "1, 0", "Enter a subgroup"),
+])
+def test_compute_branching_errors(group, subgroup, irrep, message):
+    page, text = compute_branching(group, subgroup, irrep)
+    assert text == "" and message in page
+
+
+@pytest.mark.parametrize("example", BRANCH_EXAMPLES)
+def test_branch_examples_run(example):
+    page, text = compute_branching(*example)
+    assert "✔" in page and text
+
+
+def test_subgroup_choices():
+    assert "SU(3)xSU(2)xU(1)" in subgroup_choices("SU(5)")
+    assert "SU(4)xSU(2)xSU(2)" in subgroup_choices("SO(10)")
+    assert subgroup_choices("nonsense") == []
+    for choice in subgroup_choices("E6"):
+        page, text = compute_branching("E6", choice, "1, 0, 0, 0, 0, 0")
+        assert "27 = 27 ✔" in page
