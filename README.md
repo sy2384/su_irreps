@@ -136,3 +136,24 @@ For the other algebras they check the root systems and Cartan matrices, the dime
 known products (SO(7), SO(8), SO(9), SO(10), Sp(4), Sp(6), G2, F4, E6, E7, E8), that the weight method agrees with
 the Young tableau code for SU(N), the isomorphisms SO(5) = Sp(4) and SO(6) = SU(4), that weight multiplicities add up
 to the Weyl dimension, and the same character, dimension, symmetry and singlet checks as for SU(N).
+
+`tests/test_reference_tables.py` checks both codes against references that share no code with them: the published
+LieART 2.0 tables of irreps and tensor products ([arXiv:1912.10969](https://arxiv.org/abs/1912.10969), appendix; SU(2)
+to SU(16), SO(7) to SO(32), Sp(4) to Sp(30) and the exceptional algebras), and results from the programs
+[LiE](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/) 2.2.2 and [GAP](https://www.gap-system.org) 4.12: dimensions,
+conjugates, dominant weight multiplicities and tensor products. The data is in `tests/data`, made by
+`tools/make_reference_data.py`, so the tests do not need LiE, GAP or LieART installed.
+
+## Conventions in other references
+
+Dynkin labels here follow Bourbaki's numbering, as LiE does. Other references differ:
+
+- LieART numbers E6, E7 and E8 as Dynkin did: its labels (a1, ..., an) are (a1, an, a2, ..., a(n-1)) here. For
+  example LieART's 78 of E6 is (000001), which is (0, 1, 0, 0, 0, 0) here. For all other algebras, G2 and F4
+  included, LieART's labels are the same as here.
+- GAP numbers F4 differently: GAP's (a1, a2, a3, a4) is (a2, a4, a3, a1) here, so GAP's (1, 0, 0, 0) is the 26.
+- Which irrep of a conjugate pair is called barred is a convention. Here an irrep is barred when its labels are
+  lexicographically smaller than its conjugate's. LieART chooses differently for some irreps: for example its 16 of
+  SO(10) and its 351 of E6 are (0, 0, 0, 0, 1) and (0, 0, 0, 0, 1, 0) in the numbering here, which this code calls
+  16 bar and 351 bar. Likewise LieART calls the SO(8) spinors (0, 0, 0, 1) 8s and (0, 0, 1, 0) 8c. Only the names
+  differ: the decompositions agree label by label.
