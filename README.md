@@ -1,4 +1,4 @@
-# su_irreps
+# lie-tensor-products
 
 Compute the Clebsch-Gordan decomposition of tensor products of irreducible representations of simple Lie algebras:
 SU(N) with Young tableaux, and SO(N), Sp(2N), G2, F4, E6, E7, E8 (as well as SU(N)) with weights.
