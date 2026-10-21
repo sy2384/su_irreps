@@ -34,4 +34,5 @@ def output_irrep():
     print(message)
 
 
-output_irrep()
+if __name__ == '__main__':
+    output_irrep()
