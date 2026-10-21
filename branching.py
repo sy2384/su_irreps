@@ -1,8 +1,9 @@
-# Branching rules: decompose an irrep of a simple Lie algebra G into irreps of a subalgebra H = H_1 x H_2 x ... x U(1)^k.
+# Branching rules: decompose an irrep of a simple Lie algebra G into irreps of a subalgebra H = H_1 x ... x U(1)^k.
 #
 # An embedding of H in G is described by its projection matrix: a linear map from the weights of G (Dynkin labels) to
-# the weights of H (the Dynkin labels of each simple factor and a charge for each U(1), in the order of the factors). To branch an irrep of G,
-# project all its weights and peel off the H irreps from the top: the highest projected weight is the highest weight of
+# the weights of H (the Dynkin labels of each simple factor and a charge for each U(1), in the order of the factors).
+# To branch an irrep of G, project all its weights and peel off the H irreps from the top: the highest projected
+# weight is the highest weight of
 # an H irrep, whose weights are then removed, and so on.
 #
 # The projection matrices are not copied from tables. They are built from the embeddings themselves:
@@ -660,7 +661,8 @@ def identity_embedding(factor):
 
 
 # Isomorphisms between algebras of different names: SO(6) = SU(4), SO(5) = Sp(4)
-ISOMORPHISMS = {('D', 3, 'A', 3): [[0, 1, 0], [1, 0, 0], [0, 0, 1]], ('A', 3, 'D', 3): [[0, 1, 0], [1, 0, 0], [0, 0, 1]],
+ISOMORPHISMS = {('D', 3, 'A', 3): [[0, 1, 0], [1, 0, 0], [0, 0, 1]],
+                ('A', 3, 'D', 3): [[0, 1, 0], [1, 0, 0], [0, 0, 1]],
                 ('B', 2, 'C', 2): [[0, 1], [1, 0]], ('C', 2, 'B', 2): [[0, 1], [1, 0]]}
 
 
