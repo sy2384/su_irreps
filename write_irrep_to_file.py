@@ -41,4 +41,5 @@ def write_to_file(input_file='test_cases.csv', output_file='result.txt'):
             results.write(irrep_result_str(line)+'\n')
 
 
-write_to_file()
+if __name__ == '__main__':
+    write_to_file()
